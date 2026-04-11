@@ -7,7 +7,7 @@ const COLORS = [
   '#10b981', '#a855f7', '#f43f5e', '#3b82f6'
 ]
 
-const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark }) => {
+const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark, isRigged }) => {
   const canvasRef = useRef(null)
   const wheelRef = useRef(null)
   const rotationRef = useRef(0)
@@ -83,15 +83,27 @@ const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark }) 
     gsap.ticker.fps(240) // Allow up to 240fps for high refresh rate monitors
     
     const count = participants.length
-    // Rigging: Always fall on participant #7 (index 6). 
-    // Fallback to random or last if fewer than 7 participants.
-    const winnerIndex = count >= 7 ? 6 : Math.floor(Math.random() * count)
+    // Rigging: Always fall on participant #7 (index 6) if configured to.
+    // Fallback to random if rigged is off or fewer than 7 participants.
+    const winnerIndex = (isRigged && count >= 7) ? 6 : Math.floor(Math.random() * count)
     const angleStep = 360 / count
     
-    const segmentCenter = (winnerIndex * angleStep) + (angleStep / 2)
-    const targetRotation = 360 * 10 + (360 - segmentCenter) + 270 // 10 full turns for more speed feel
+    // Calculate precise target rotation to land at the top (270 degrees)
+    // We add a random offset so the pointer doesn't stop exactly at the center every single time
+    const randomOffset = (Math.random() - 0.5) * (angleStep * 0.8) // Avoid landing on exact segment boundaries
+    const segmentCenter = (winnerIndex * angleStep) + (angleStep / 2) + randomOffset
     
-    rotationRef.current += targetRotation
+    // We want: (rotationRef.current + totalRotation) % 360 == (270 - segmentCenter)
+    // Calculate safely with negative bounds handling
+    const currentRotation = ((rotationRef.current % 360) + 360) % 360
+    const desiredFinalAngle = (270 - segmentCenter + 360) % 360
+    
+    let rotationToAdd = (desiredFinalAngle - currentRotation + 360) % 360
+    
+    // Add minimum full turns for impact
+    rotationToAdd += 360 * 10 
+    
+    rotationRef.current += rotationToAdd
 
     gsap.to(wheelRef.current, {
       rotation: rotationRef.current,

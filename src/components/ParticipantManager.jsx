@@ -7,7 +7,7 @@ const ParticipantManager = ({ participants, setParticipants, disabled, isDark })
 
   const addParticipant = (e) => {
     e.preventDefault()
-    if (!inputValue.trim() || participants.length >= 8) return
+    if (!inputValue.trim() || participants.length >= 16) return
 
     if (editingId !== null) {
       setParticipants(participants.map(p => p.id === editingId ? { ...p, name: inputValue.trim() } : p))
@@ -31,7 +31,7 @@ const ParticipantManager = ({ participants, setParticipants, disabled, isDark })
     <div className={`w-full max-w-md glass p-6 rounded-3xl animate-in fade-in slide-in-from-left duration-700 ${isDark ? 'dark' : 'light'}`}>
       <div className="flex items-center gap-2 mb-6 text-xl font-bold font-heading">
         <UserPlus className="text-green-500" />
-        <h2 className={isDark ? 'text-white' : 'text-slate-800'}>Participantes <span className="text-sm font-normal text-slate-400">({participants.length}/8)</span></h2>
+        <h2 className={isDark ? 'text-white' : 'text-slate-800'}>Participantes <span className="text-sm font-normal text-slate-400">({participants.length}/16)</span></h2>
       </div>
 
       <form onSubmit={addParticipant} className="flex gap-2 mb-6">
@@ -42,11 +42,11 @@ const ParticipantManager = ({ participants, setParticipants, disabled, isDark })
           placeholder="Nombre del participante..."
           className={`flex-1 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all placeholder:text-slate-500 ${isDark ? 'bg-slate-900/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
           maxLength={20}
-          disabled={disabled || (participants.length >= 8 && editingId === null)}
+          disabled={disabled || (participants.length >= 16 && editingId === null)}
         />
         <button
           type="submit"
-          disabled={disabled || (!inputValue.trim()) || (participants.length >= 8 && editingId === null)}
+          disabled={disabled || (!inputValue.trim()) || (participants.length >= 16 && editingId === null)}
           className="premium-gradient p-3 rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
         >
           {editingId !== null ? <Edit2 size={24} className="text-white" /> : <Plus size={24} className="text-white" />}
