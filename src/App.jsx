@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Wheel from './components/Wheel'
 import ParticipantManager from './components/ParticipantManager'
 import WinnerReveal from './components/WinnerReveal'
@@ -8,28 +8,57 @@ function App() {
   const [winner, setWinner] = useState(null)
   const [isSpinning, setIsSpinning] = useState(false)
   
-  // Secuencia trucada: posiciones (1-indexed) del participante que debe ganar en cada ronda.
-  // Ej: si hay 16 participantes y la secuencia es [12, 3, 4, 16, 10, 14, 7, 9],
-  // en la primera ronda gana el participante en la posición 12,
-  // en la segunda ronda gana el que esté en la posición 3 de los restantes, etc.
+  // Guardamos el orden en que entraron los participantes para que la secuencia sea exacta
+  const [originalOrder, setOriginalOrder] = useState([])
+  
+  // Secuencia trucada
   const sequenceRef = useRef([12, 3, 4, 16, 10, 14, 7, 9])
+
+  // Actualizamos el orden original cada vez que se agregan participantes
+  useEffect(() => {
+    if (participants.length > originalOrder.length) {
+      setOriginalOrder([...participants])
+    }
+    // Si se limpia la lista, reseteamos todo
+    if (participants.length === 0) {
+      setOriginalOrder([])
+      sequenceRef.current = [12, 3, 4, 16, 10, 14, 7, 9]
+    }
+  }, [participants, originalOrder.length])
 
   const handleSpinComplete = (winnerName) => {
     setWinner(winnerName)
     setIsSpinning(false)
   }
 
-  const advanceSequence = () => {
-    sequenceRef.current = sequenceRef.current.slice(1)
-  }
-
   const reset = () => {
     if (winner) {
+      // Avanzamos la secuencia ANTES de filtrar para evitar desfasajes
+      const currentTargetPos = sequenceRef.current[0]
+      sequenceRef.current = sequenceRef.current.slice(1)
+      
       setParticipants(prev => prev.filter(p => p.name !== winner))
-      advanceSequence()
     }
     setWinner(null)
     setIsSpinning(false)
+  }
+
+  // Calculamos quién debería ganar ANTES de que la ruleta empiece a girar
+  const getNextForcedWinnerName = () => {
+    if (sequenceRef.current.length === 0) return null
+    
+    const targetPos = sequenceRef.current[0]
+    const targetIndex = targetPos - 1
+    
+    // Buscamos quién fue la persona que entró en esa posición originalmente
+    const originalParticipant = originalOrder[targetIndex]
+    
+    if (!originalParticipant) return null
+    
+    // Verificamos si esa persona todavía está en la ruleta
+    const isStillIn = participants.some(p => p.id === originalParticipant.id)
+    
+    return isStillIn ? originalParticipant.name : null
   }
 
   return (
@@ -63,7 +92,7 @@ function App() {
                 isSpinning={isSpinning}
                 setIsSpinning={setIsSpinning}
                 isDark={true}
-                plannedSequence={sequenceRef.current}
+                forcedWinnerName={getNextForcedWinnerName()}
               />
             </div>
           </section>

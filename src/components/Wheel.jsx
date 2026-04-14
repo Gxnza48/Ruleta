@@ -7,7 +7,7 @@ const COLORS = [
   '#10b981', '#a855f7', '#f43f5e', '#3b82f6'
 ]
 
-const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark, plannedSequence }) => {
+const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark, forcedWinnerName }) => {
   const canvasRef = useRef(null)
   const wheelRef = useRef(null)
   const rotationRef = useRef(0)
@@ -85,23 +85,13 @@ const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark, pl
     
     const count = participants.length
     
-    // Determine winner based on sequence (position-based, 1-indexed)
+    // Determinamos el índice del ganador basándonos en el NOMBRE forzado que viene de App.jsx
     let winnerIndex = -1
-    if (plannedSequence && plannedSequence.length > 0) {
-      // The sequence value represents the 1-indexed position of the winner
-      // in the CURRENT participant list (after previous winners have been removed)
-      const targetPosition = plannedSequence[0]
-      
-      // Convert 1-indexed position to 0-indexed array index
-      const targetIndex = targetPosition - 1
-      
-      // Validate the index is within bounds of current participants
-      if (targetIndex >= 0 && targetIndex < count) {
-        winnerIndex = targetIndex
-      }
+    if (forcedWinnerName) {
+      winnerIndex = participants.findIndex(p => p.name === forcedWinnerName)
     }
 
-    // Fallback to random if sequence is empty or position out of bounds
+    // Fallback a random si algo falla o no hay ganador forzado
     if (winnerIndex === -1) {
       winnerIndex = Math.floor(Math.random() * count)
     }
@@ -109,18 +99,14 @@ const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark, pl
     const angleStep = 360 / count
     
     // Calculate precise target rotation to land at the top (270 degrees)
-    // We add a random offset so the pointer doesn't stop exactly at the center every single time
-    const randomOffset = (Math.random() - 0.5) * (angleStep * 0.8) // Avoid landing on exact segment boundaries
+    const randomOffset = (Math.random() - 0.5) * (angleStep * 0.8)
     const segmentCenter = (winnerIndex * angleStep) + (angleStep / 2) + randomOffset
     
-    // We want: (rotationRef.current + totalRotation) % 360 == (270 - segmentCenter)
-    // Calculate safely with negative bounds handling
     const currentRotation = ((rotationRef.current % 360) + 360) % 360
     const desiredFinalAngle = (270 - segmentCenter + 360) % 360
     
     let rotationToAdd = (desiredFinalAngle - currentRotation + 360) % 360
     
-    // Add minimum full turns for impact
     rotationToAdd += 360 * 10 
     
     rotationRef.current += rotationToAdd
@@ -138,10 +124,8 @@ const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark, pl
   return (
     <div className="flex flex-col items-center gap-8">
       <div className="relative group">
-        {/* Glow effect */}
         <div className={`absolute -inset-4 rounded-full blur-3xl transition-opacity duration-1000 ${isSpinning ? 'opacity-100 animate-pulse' : 'opacity-0'} ${isDark ? 'bg-green-500/10' : 'bg-green-500/30'}`}></div>
         
-        {/* Pointer (Arrow) */}
         <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 z-10 drop-shadow-xl">
           <svg width="40" height="50" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M20 50L0 0H40L20 50Z" fill={isDark ? "#22c55e" : "#16a34a"} />
