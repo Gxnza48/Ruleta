@@ -7,7 +7,7 @@ const COLORS = [
   '#10b981', '#a855f7', '#f43f5e', '#3b82f6'
 ]
 
-const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark }) => {
+const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark, plannedSequence }) => {
   const canvasRef = useRef(null)
   const wheelRef = useRef(null)
   const rotationRef = useRef(0)
@@ -85,8 +85,26 @@ const Wheel = ({ participants, onComplete, isSpinning, setIsSpinning, isDark }) 
     
     const count = participants.length
     
-    // Purely random winner selection
-    const winnerIndex = Math.floor(Math.random() * count)
+    // Determine winner based on sequence (position-based, 1-indexed)
+    let winnerIndex = -1
+    if (plannedSequence && plannedSequence.length > 0) {
+      // The sequence value represents the 1-indexed position of the winner
+      // in the CURRENT participant list (after previous winners have been removed)
+      const targetPosition = plannedSequence[0]
+      
+      // Convert 1-indexed position to 0-indexed array index
+      const targetIndex = targetPosition - 1
+      
+      // Validate the index is within bounds of current participants
+      if (targetIndex >= 0 && targetIndex < count) {
+        winnerIndex = targetIndex
+      }
+    }
+
+    // Fallback to random if sequence is empty or position out of bounds
+    if (winnerIndex === -1) {
+      winnerIndex = Math.floor(Math.random() * count)
+    }
 
     const angleStep = 360 / count
     
